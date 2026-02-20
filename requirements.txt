@@ -1,0 +1,7 @@
+--index-url https://download.pytorch.org/whl/cu128
+torch
+torchvision
+opencv-python
+decord
+matplotlib
+tqdm
