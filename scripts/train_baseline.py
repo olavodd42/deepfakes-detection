@@ -4,12 +4,10 @@ from torchvision import models
 from torchvision.datasets import ImageFolder
 from torchvision.transforms import transforms
 from torch.utils.data import DataLoader
-from collections import Counter
-import random
 
 from src.plot_image import plot_first_image
 from src.train_resnet import train
-from evaluate_metrics import plot_metrics, show_distribution
+from src.evaluate_metrics import plot_metrics, show_distribution
 
 # --- Config ---
 SAMPLE_FRACTION = 1.0  # Full dataset
