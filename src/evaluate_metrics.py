@@ -1,5 +1,8 @@
 import torch
 import matplotlib.pyplot as plt
+import torch.nn.functional as F
+from sklearn.metrics import roc_auc_score, roc_curve
+from collections import Counter
 
 def plot_metrics(history):
     epochs = range(1, len(history["train_loss"]) + 1)
@@ -33,16 +36,25 @@ def show_distribution(model, test_loader, test_dataset):
 
     all_preds = []
     all_labels = []
+    all_probs = []
 
     with torch.no_grad():
         for images, labels in test_loader:
             images = images.to(device)
             logits = model(images)
+            probs = F.softmax(logits, dim=1)
+
             _, preds = torch.max(logits, 1)
             all_preds.extend(preds.cpu().tolist())
             all_labels.extend(labels.tolist())
+            all_probs.extend(probs[:, 1].cpu().tolist())
 
-    from collections import Counter
     print(f"Predictions distribution: {Counter(all_preds)}")
     print(f"Labels distribution:      {Counter(all_labels)}")
     print(f"Class mapping: {test_dataset.class_to_idx}")
+
+    try:
+        auroc = roc_auc_score(all_labels, all_probs)
+        print(f"\n[Métrica Forense] Binary AUROC on Known Set: {auroc:.4f}")
+    except ValueError:
+        print("\n[Warning] AUROC not computed: Only one class present in the batch/dataset.")

@@ -19,14 +19,11 @@ NUM_CLASSES = 2
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 train_transform = transforms.Compose([
-    transforms.Resize(232),
-    transforms.RandomCrop(224),
-    transforms.RandomHorizontalFlip(),
-    transforms.RandomRotation(10),
-    transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.1),
+    transforms.Resize((224, 224)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
+
 
 print(f"GPU: {torch.cuda.get_device_name(0)}" if torch.cuda.is_available() else "CPU only")
 
@@ -60,29 +57,20 @@ print(f"Test distribution:  {dict(zip(dataset.classes, [val_targets.count(i) for
 plot_first_image(dataset)
 
 criterion = torch.nn.CrossEntropyLoss()
-optimizer = torch.optim.AdamW([
-    {"params": model.layer4.parameters(), "lr": 1e-4},
-    {"params": model.fc.parameters(), "lr": 1e-3},
-], weight_decay=1e-2)
-scaler = torch.GradScaler(device=DEVICE.type) if DEVICE.type == "cuda" else None
-
-torch.backends.cudnn.benchmark = True  # Auto-tune convolutions for fixed input size
-
-model = model.to(DEVICE)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
 
 model, history = train(
     model,
-    train_loader=train_loader,
-    val_loader=val_loader,
+    train_loader=dataloaders["train"],
+    val_loader=dataloaders["val"],
     criterion=criterion,
     optimizer=optimizer,
-    num_epochs=30,
-    warmup_epochs=3,
-    scaler=scaler
+    num_epochs=5,
+    warmup_epochs=1,
 )
 
 plot_metrics(history)
-show_distribution(model, test_loader, val_data)
+show_distribution(model, dataloaders["val"], val_data)
 
 os.makedirs('./outputs', exist_ok=True)
 torch.save(model.state_dict(), './outputs/model_best.pth')
